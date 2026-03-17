@@ -16,18 +16,19 @@ This repo provides a more formal and detailed deployment guide than the official
 | `install_claude.ps1` | Enables Virtual Machine Platform, provisions the MSIX system-wide |
 | `detect_claude.ps1` | Detection script for Intune |
 | `uninstall_claude.ps1` | Removes and deprovisions Claude for all users |
-| `create-intune-policy.ps1` | Creates the Intune configuration profile via Microsoft Graph |
-| `claude-desktop-intune-policy.json` | Settings reference (do not import via UI — use the script above) |
+| `claude-desktop-intune-policy.json` | Registry policy settings reference |
+| `claude_admx/claude_admx.admx` | ADMX Group Policy template for Claude Desktop |
+| `claude_admx/claude_adml.adml` | ADML language file for the ADMX template |
 
 ---
 
 ## Step 1 — Download the MSIX
 
-Download the latest Claude Desktop MSIX from the Anthropic website:
+Download the latest Claude Desktop MSIX directly from Anthropic:
 
-**https://claude.ai/download**
+**https://claude.ai/api/desktop/win32/x64/msix/latest/redirect**
 
-Select **Windows** and download the `.msix` file. Save it as `Claude.msix`.
+Save the downloaded file as `Claude.msix`.
 
 ---
 
@@ -110,23 +111,7 @@ Start with a pilot group. Check install status under **Devices > Monitor > App i
 
 ## Step 5 — Deploy the registry policy
 
-This step applies the Claude enterprise settings (auto-updates, Cowork, extensions) by creating an Intune custom configuration profile via Microsoft Graph. Run the script from any machine with internet access and an Intune Administrator account:
-
-```powershell
-.\create-intune-policy.ps1
-```
-
-The script will:
-1. Install the `Microsoft.Graph` PowerShell module if not already present
-2. Open a browser to authenticate (requires Intune Administrator or Global Administrator role)
-3. Check whether the profile already exists and offer to update it if so
-4. Create the profile and print its ID
-
-After the script completes, go to **Devices > Configuration profiles** in the Intune admin centre, find **Claude Desktop - Enterprise Policy**, and assign it to the same device group used for the Win32 app.
-
-> **Note:** `claude-desktop-intune-policy.json` is kept in this repo as a reference for the settings, but the Intune portal JSON import (currently in preview) is unreliable — use the script above instead.
-
-The policy writes the following registry keys to `HKLM\SOFTWARE\Policies\Claude`:
+The `claude-desktop-intune-policy.json` file documents the enterprise registry settings for Claude Desktop. Create an Intune **custom configuration profile** (OMA-URI) to apply these settings, or use your preferred method to push the following registry keys to `HKLM\SOFTWARE\Policies\Claude`:
 
 | Setting | Value | Notes |
 |---|---|---|
@@ -141,6 +126,27 @@ The policy writes the following registry keys to `HKLM\SOFTWARE\Policies\Claude`
 Review `isLocalDevMcpEnabled` and `isClaudeCodeForDesktopEnabled` before deploying to general staff. Both are on by default but explicitly setting them in policy locks the value so users and apps cannot override it.
 
 > Check the [enterprise configuration reference](https://support.claude.com/en/articles/12622667-enterprise-configuration) for the current full list of supported policy keys, as Anthropic may add or change settings over time.
+
+---
+
+## Step 6 — Deploy GPO policy via ADMX (optional)
+
+The `claude_admx/` folder contains ADMX and ADML policy templates for managing Claude Desktop via Group Policy or Intune's ADMX ingestion feature.
+
+To use with Intune:
+1. Go to **Devices > Configuration profiles > Create > New policy**
+2. Platform: **Windows 10 and later**, Profile type: **Templates > Imported Administrative templates**
+3. Import `claude_admx.admx` and `claude_adml.adml`
+4. Configure the desired policy settings and assign to a device group
+
+To use with traditional Group Policy, copy the files to your Central Store:
+```
+\\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions\
+    claude_admx.admx
+    en-US\claude_adml.adml
+```
+
+> GPO/ADML templates contributed with assistance from **Zane @ the Kestral team**.
 
 ---
 
