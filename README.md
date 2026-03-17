@@ -16,7 +16,6 @@ This repo provides a more formal and detailed deployment guide than the official
 | `install_claude.ps1` | Enables Virtual Machine Platform, provisions the MSIX system-wide |
 | `detect_claude.ps1` | Detection script for Intune |
 | `uninstall_claude.ps1` | Removes and deprovisions Claude for all users |
-| `claude-desktop-intune-policy.json` | Registry policy settings reference |
 | `claude_admx/claude_admx.admx` | ADMX Group Policy template for Claude Desktop |
 | `claude_admx/claude_adml.adml` | ADML language file for the ADMX template |
 
@@ -109,27 +108,7 @@ Start with a pilot group. Check install status under **Devices > Monitor > App i
 
 ---
 
-## Step 5 — Deploy the registry policy
-
-The `claude-desktop-intune-policy.json` file documents the enterprise registry settings for Claude Desktop. Create an Intune **custom configuration profile** (OMA-URI) to apply these settings, or use your preferred method to push the following registry keys to `HKLM\SOFTWARE\Policies\Claude`:
-
-| Setting | Value | Notes |
-|---|---|---|
-| `disableAutoUpdates` | 0 | Auto-updates on |
-| `autoUpdaterEnforcementHours` | 72 | Force-restart within 72 hours to apply updates |
-| `secureVmFeaturesEnabled` | 1 | Enables Cowork |
-| `isDesktopExtensionEnabled` | 1 | Extensions on |
-| `isDesktopExtensionDirectoryEnabled` | 1 | Extension directory access on |
-| `isLocalDevMcpEnabled` | 1 | Local MCP servers on |
-| `isClaudeCodeForDesktopEnabled` | 1 | Claude Code access on |
-
-Review `isLocalDevMcpEnabled` and `isClaudeCodeForDesktopEnabled` before deploying to general staff. Both are on by default but explicitly setting them in policy locks the value so users and apps cannot override it.
-
-> Check the [enterprise configuration reference](https://support.claude.com/en/articles/12622667-enterprise-configuration) for the current full list of supported policy keys, as Anthropic may add or change settings over time.
-
----
-
-## Step 6 — Deploy GPO policy via ADMX (optional)
+## Step 5 — Deploy GPO policy via ADMX (optional)
 
 The `claude_admx/` folder contains ADMX and ADML policy templates for managing Claude Desktop via Group Policy or Intune's ADMX ingestion feature.
 
