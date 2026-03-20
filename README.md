@@ -1,11 +1,13 @@
 # Claude Desktop — Intune Deployment
 
-This repo covers deploying Claude Desktop system-wide via Microsoft Intune, including the Hyper-V prerequisites required for Claude Cowork to function.It allows claude features to run without requiring admin access. Honestly, you can tell Anthropic dont live in a world with enterprise and security best practices. 
+This repo covers deploying Claude Desktop system-wide via Microsoft Intune, including the Hyper-V prerequisites required for Claude Cowork to function. It allows Claude features including Cowork to run without requiring users to have local administrator rights — something Anthropic's own installer does not support out of the box.
 
 > **Work in progress — tested on Windows 11 Pro managed devices. Always check Anthropic's official documentation as the authoritative reference.**
 >
 > - [Deploy Claude Desktop for Windows](https://support.claude.com/en/articles/12622703-deploy-claude-desktop-for-windows)
 > - [Enterprise configuration](https://support.claude.com/en/articles/12622667-enterprise-configuration)
+
+> **All scripts in this repository were written by Claude (the AI).** The code has been reviewed and tested in a production Intune environment, but it may contain bugs. Review everything before deploying to your fleet, test on a pilot group first, and adapt to your organisation's requirements. Use at your own risk.
 
 ---
 
@@ -262,39 +264,57 @@ The `claude_admx/` folder contains ADMX and ADML policy templates for managing C
 
 ## End user communication
 
-When rolling out to users, set expectations upfront. A suggested message:
+> **This approach worked well for our environment — your mileage may vary.** The message and process below reflect what we actually sent to staff during our rollout. Adapt the tone, support contact, and specific steps to suit your organisation. The key facts (two reboots, flag file location, Company Portal sync) are accurate regardless of environment.
+
+The deployment is largely silent, but setting expectations upfront avoids a lot of "where's Claude?" tickets. Below is the message we used, genericised.
 
 ---
 
-> **Claude Desktop is being deployed to your device.**
->
-> To complete the setup, your device needs to be restarted **at least twice** over the coming hours. Claude will not appear or work correctly until both restarts have completed and the background configuration has finished.
->
-> You don't need to do anything other than restart when prompted or at a convenient time. If you see a notification saying **"Claude Desktop is almost ready"**, that means the first phase is done — please restart when you can.
->
-> Once Claude appears in your Start Menu, Cowork should work without needing administrator access.
+**Subject: Claude Desktop — rolling out to your PC over the coming days**
+
+Claude Desktop will install automatically on your work PC. You don't need to kick anything off.
+
+Getting Claude's virtual machine feature (Cowork) running properly requires some specific Windows components to be enabled and a couple of services running before the app can even install. The whole process needs **at least two reboots**, so it may take a day or so depending on when Intune checks in.
+
+**What happens in the background:**
+Some scripts will run to check and configure the Windows settings needed to support Cowork. Once everything checks out, your PC gets a green light and Claude installs automatically via Intune.
+
+**How to check if your PC is ready:**
+Once the scripts have run successfully, a small flag file will appear at:
+
+`C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Claude\ClaudePrereqsReady.flag`
+
+> Note: `C:\ProgramData` is a hidden folder. Paste the full path directly into the File Explorer address bar to navigate there, or enable hidden items in View settings.
+
+If that file exists, your PC is prepped and Claude is cleared to install. You can speed things along by opening **Company Portal → Settings → Sync**, which prompts Intune to check in immediately rather than waiting for the next scheduled cycle.
+
+**Once it's installed:**
+1. Open **Company Portal** and look for Claude Desktop under **Downloads & Updates** — it will auto-install, so check there rather than searching manually.
+2. Once you see it listed, **restart your PC**.
+3. After the reboot, open the **Start menu** — Claude will appear under "recently added". Open that entry.
+4. Remove any old Claude shortcuts (desktop, taskbar, pinned Start items) — use only the newly installed version.
+5. Pin the new Claude to your taskbar for easy access.
+
+**If something doesn't look right:**
+If the flag file isn't there after a day or so, or Claude isn't showing in Company Portal after a reboot, contact your IT support team — logs are available at `C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Claude\` for troubleshooting.
 
 ---
 
-### How users can verify the prereqs are ready
+### How users can check the flag themselves
 
-The deployment writes a flag file once the system is prepared. Users can check it themselves — no admin rights needed.
+Users can verify readiness without admin rights in two ways:
 
-The file is in `C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Claude\` — note that `C:\ProgramData` is a **hidden folder** in Windows Explorer. To navigate there directly:
+**File Explorer:** Paste this path directly into the address bar and press Enter:
+```
+C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Claude\
+```
+If `ClaudePrereqsReady.flag` is there, the prereqs are done.
 
-1. Open **File Explorer**
-2. Click in the address bar and type: `C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Claude\`
-3. Press Enter
-
-If `ClaudePrereqsReady.flag` exists in that folder, the prereqs are done and Claude should install on the next Intune sync. If it isn't there yet, the device needs another reboot or more time for the hourly remediation to run.
-
-Alternatively, users can run this in PowerShell (no elevation needed):
-
+**PowerShell** (no elevation needed):
 ```powershell
 Test-Path "C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Claude\ClaudePrereqsReady.flag"
 ```
-
-`True` = ready. `False` = not yet — restart and wait for the next Intune cycle.
+`True` = ready. `False` = not yet — another reboot and Intune cycle needed.
 
 ---
 
