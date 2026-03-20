@@ -239,7 +239,7 @@ Start with a pilot group. Check install status under **Devices > Monitor > App i
 
 The `claude_admx/` folder contains ADMX and ADML policy templates for managing Claude Desktop settings via Intune's Administrative Templates profile or traditional Group Policy.
 
-**Use ADMX over JSON/OMA-URI.** Anthropic ships updated ADMX templates with each Claude release and the settings map directly to the [Enterprise configuration](https://support.claude.com/en/articles/12622667-enterprise-configuration) documentation. Intune's Imported Administrative Templates approach picks up new settings automatically as Claude updates — you don't need to maintain OMA-URI paths or re-import JSON blobs when Anthropic adds settings. The ADMX approach has also been observed to apply more reliably than direct registry JSON configuration in testing.
+**Use ADMX over JSON/OMA-URI.** The ADMX templates in this repo were created by a colleague and map to the settings documented in [Enterprise configuration](https://support.claude.com/en/articles/12622667-enterprise-configuration). The ADMX approach has been observed to apply more reliably than direct registry JSON configuration in testing, and you avoid having to maintain OMA-URI paths or re-import JSON blobs as settings change. Note that Anthropic does not currently ship official ADMX templates with Claude releases — the templates here are community-produced and will need to be updated manually if Anthropic adds new policy settings.
 
 **To use with Intune (recommended):**
 
@@ -248,7 +248,7 @@ The `claude_admx/` folder contains ADMX and ADML policy templates for managing C
 3. Import `claude_admx.admx` and `claude_adml.adml`
 4. Configure the desired policy settings and assign to a device group
 
-> When Anthropic releases a new Claude version with new policy settings, re-import the updated ADMX/ADML files into the same profile. Existing configured settings are preserved.
+> If the ADMX templates in this repo are updated to add new policy settings, re-import both files into the same Intune profile. Existing configured settings are preserved.
 
 **To use with traditional Group Policy**, copy to your Central Store:
 
